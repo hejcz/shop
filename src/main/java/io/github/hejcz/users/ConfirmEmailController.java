@@ -1,4 +1,4 @@
-package io.github.hejcz.authentication;
+package io.github.hejcz.users;
 
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.security.annotation.Secured;
