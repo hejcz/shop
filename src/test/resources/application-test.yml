@@ -1,0 +1,4 @@
+javamail:
+  authentication:
+    username: user
+    password: password

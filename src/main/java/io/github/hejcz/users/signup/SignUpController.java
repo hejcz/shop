@@ -26,12 +26,16 @@ public class SignUpController {
     @Inject
     PasswordEncoder passwordEncoder;
 
+    @Inject
+    UserConfirmationService userConfirmationService;
+
     @Post
     public Mono<MutableHttpResponse<Object>> signUp(@Valid @Body SignupForm signupForm, HttpRequest<?> request) {
         return userRepository.findAllByEmailOrUsername(signupForm.email(), signupForm.username())
             .singleOrEmpty()
             .map(user -> HttpResponse.badRequest())
             .switchIfEmpty(userRepository.save(SignupFormMapper.INSTANCE.map(signupForm.withEncodedPassword(passwordEncoder)))
+                .doOnNext(user -> userConfirmationService.sendConfirmationEmail(user.getEmail()))
                 .map(user -> HttpResponse.created(URI.create("/users/" + user.getId()))));
     }
 

@@ -14,3 +14,8 @@ netty:
   default:
     allocator:
       max-order: 3
+javamail:
+  authentication:
+    username: ${EMAIL_USERNAME:grupa.gollum@op.pl}
+    password: ${EMAIL_PASSWORD}
+hostname: ${HOSTNAME:`http://localhost:8080`}

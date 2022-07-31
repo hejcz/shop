@@ -1,5 +1,6 @@
 package io.github.hejcz;
 
+import io.github.hejcz.email.EmailSender;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -7,6 +8,7 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.runtime.EmbeddedApplication;
+import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import io.micronaut.test.support.TestPropertyProvider;
 import jakarta.inject.Inject;
@@ -39,6 +41,9 @@ class BoardGamesStoreTest implements TestPropertyProvider {
     @Inject
     @Client("/")
     HttpClient httpClient;
+
+    @MockBean
+    EmailSender emailSender;
 
     @Test
     void shouldHaveAuthorizationConfigured() {
