@@ -23,6 +23,7 @@ public class AuthenticationProviderUserPassword implements AuthenticationProvide
     public Publisher<AuthenticationResponse> authenticate(@Nullable HttpRequest<?> httpRequest,
                                                           AuthenticationRequest<?, ?> authenticationRequest) {
         return userRepository.findByUsername(authenticationRequest.getIdentity().toString())
+            .filter(User::isConfirmed)
             .handle((user, sink) -> {
                 if (passwordEncoder.matches(authenticationRequest.getSecret().toString(), user.getPassword())) {
                     sink.next(AuthenticationResponse.success((String) authenticationRequest.getIdentity()));

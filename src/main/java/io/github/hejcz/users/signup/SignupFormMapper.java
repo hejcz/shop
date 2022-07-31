@@ -12,6 +12,7 @@ public interface SignupFormMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "confirmed", constant = "false")
     User map(SignupForm form);
 
 }

@@ -1,6 +1,7 @@
 package io.github.hejcz;
 
 import io.github.hejcz.email.EmailSender;
+import io.github.hejcz.users.UserRepository;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
@@ -10,30 +11,19 @@ import io.micronaut.http.client.annotation.Client;
 import io.micronaut.runtime.EmbeddedApplication;
 import io.micronaut.test.annotation.MockBean;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import io.micronaut.test.support.TestPropertyProvider;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.util.Map;
 
 @MicronautTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
-class BoardGamesStoreTest implements TestPropertyProvider {
-
-    @Container
-    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:5.0.9")
-        .withExposedPorts(27017);
-
-    static {
-        mongoDBContainer.start();
-    }
+class BoardGamesStoreTest {
 
     @Inject
     EmbeddedApplication<?> application;
@@ -42,8 +32,20 @@ class BoardGamesStoreTest implements TestPropertyProvider {
     @Client("/")
     HttpClient httpClient;
 
-    @MockBean
-    EmailSender emailSender;
+    @Inject
+    UserRepository userRepository;
+
+    EmailSender emailSender = Mockito.mock(EmailSender.class);
+
+    @MockBean(EmailSender.class)
+    public EmailSender emailSender() {
+        return emailSender;
+    }
+
+    @BeforeEach
+    void setUp() {
+        Mockito.reset(emailSender);
+    }
 
     @Test
     void shouldHaveAuthorizationConfigured() {
@@ -66,6 +68,12 @@ class BoardGamesStoreTest implements TestPropertyProvider {
                 """)
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON), String.class);
         Assertions.assertThat(signUpResponse.code()).isEqualTo(201);
+
+        ArgumentCaptor<String> confirmationUrlCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(emailSender).sendConfirmationLink(Mockito.anyString(), confirmationUrlCaptor.capture());
+
+        String confirmationToken = confirmationUrlCaptor.getValue()
+            .substring(confirmationUrlCaptor.getValue().indexOf("confirmation") + 13);
 
         // existing e-mail
         Assertions.assertThatThrownBy(() ->
@@ -107,6 +115,21 @@ class BoardGamesStoreTest implements TestPropertyProvider {
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON), String.class);
         Assertions.assertThat(anotherSignUpResponse.code()).isEqualTo(201);
 
+        // before confirmation user can't log
+        Assertions.assertThatThrownBy(() ->
+                httpClient.toBlocking().exchange(HttpRequest.POST("/login", """
+                {"username":"sherlock", "password":"password123"}
+                """)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON), LoginResponse.class))
+            .hasMessage("Unauthorized");
+
+        // confirm user
+        HttpResponse<String> confirmationRequest = httpClient.toBlocking()
+            .exchange(HttpRequest.GET("/confirmation/" + confirmationToken)
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON), String.class);
+        Assertions.assertThat(confirmationRequest.code()).isEqualTo(202);
+
+        // now they can log in
         HttpResponse<LoginResponse> loginResponse = httpClient.toBlocking().exchange(HttpRequest.POST("/login", """
                 {"username":"sherlock", "password":"password123"}
                 """)
@@ -117,11 +140,5 @@ class BoardGamesStoreTest implements TestPropertyProvider {
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.body().accessToken()), String.class);
         Assertions.assertThat(response.code()).isEqualTo(200);
-    }
-
-    @Override
-    public @NotNull Map<String, String> getProperties() {
-        Integer mappedPort = mongoDBContainer.getMappedPort(27017);
-        return Map.of("mongodb.uri", "mongodb://${MONGO_HOST:localhost}:" + mappedPort);
     }
 }

@@ -16,4 +16,7 @@ public interface UserRepository extends ReactorCrudRepository<User, String> {
     @NonNull
     Mono<User> findByUsername(@Nullable String username);
 
+    @NonNull
+    Mono<User> findByEmail(@Nullable String email);
+
 }

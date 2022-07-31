@@ -24,6 +24,8 @@ public class User {
 
     private String lastName;
 
+    private boolean confirmed;
+
     public String getId() {
         return id;
     }
@@ -78,5 +80,13 @@ public class User {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public void setConfirmed(boolean confirmed) {
+        this.confirmed = confirmed;
     }
 }

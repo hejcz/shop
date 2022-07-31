@@ -35,8 +35,8 @@ public class SignUpController {
             .singleOrEmpty()
             .map(user -> HttpResponse.badRequest())
             .switchIfEmpty(userRepository.save(SignupFormMapper.INSTANCE.map(signupForm.withEncodedPassword(passwordEncoder)))
-                .doOnNext(user -> userConfirmationService.sendConfirmationEmail(user.getEmail()))
-                .map(user -> HttpResponse.created(URI.create("/users/" + user.getId()))));
+                .flatMap(user -> userConfirmationService.sendConfirmationEmail(user.getEmail())
+                    .map(token -> HttpResponse.created(URI.create("/users/" + user.getId())))));
     }
 
 }
