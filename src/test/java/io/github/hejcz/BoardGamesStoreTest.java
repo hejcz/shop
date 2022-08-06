@@ -1,51 +1,28 @@
 package io.github.hejcz;
 
 import io.github.hejcz.email.EmailSender;
-import io.github.hejcz.users.UserRepository;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.client.HttpClient;
-import io.micronaut.http.client.annotation.Client;
-import io.micronaut.runtime.EmbeddedApplication;
-import io.micronaut.test.annotation.MockBean;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@MicronautTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Testcontainers
+@ExtendWith({MockitoExtension.class, MongoFriendlyMicronautTest.class})
 class BoardGamesStoreTest {
 
     @Inject
-    EmbeddedApplication<?> application;
-
-    @Inject
-    @Client("/")
     HttpClient httpClient;
 
-    @Inject
-    UserRepository userRepository;
-
-    EmailSender emailSender = Mockito.mock(EmailSender.class);
-
-    @MockBean(EmailSender.class)
-    public EmailSender emailSender() {
-        return emailSender;
-    }
-
-    @BeforeEach
-    void setUp() {
-        Mockito.reset(emailSender);
-    }
+    @Mock
+    EmailSender emailSender;
 
     @Test
     void shouldHaveAuthorizationConfigured() {
